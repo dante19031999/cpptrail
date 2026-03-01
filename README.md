@@ -1,4 +1,4 @@
-[![Documentation]()
+[![Documentation](https://dante19031999.github.io/cpptrail/)
 
 # CppTrail: High-Performance C++20 Logging 🏔️
 
@@ -86,7 +86,7 @@ int main() {
 
 To understand how to extend the library for your own needs, check out our internal documentation:
 
-- **How to create custom loggers**: See our [Custom Loggers Tutorial](docs/custom_loggers.md) for a deep dive into implementing your own synchronous and asynchronous sinks.
+- **How to create custom loggers**: See our [Custom Loggers Tutorial](https://dante19031999.github.io/cpptrail/custom_loggers_page.html) for a deep dive into implementing your own synchronous and asynchronous sinks.
 
 ---
 
