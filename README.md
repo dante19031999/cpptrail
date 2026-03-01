@@ -1,4 +1,4 @@
-[![Documentation](https://dante19031999.github.io/cpptrail/)
+[![Documentation](https://img.shields.io/badge/docs-doxygen-blue)](https://dante19031999.github.io/cpptrail/)
 
 # CppTrail: High-Performance C++20 Logging 🏔️
 
