@@ -1,0 +1,84 @@
+/**
+ * @mainpage CppTrail: High-Performance C++20 Logging
+ *
+ * @section intro_sec 🏔️ Overview
+ *
+ * CppTrail is a lightweight, header-only logging framework built for the modern C++20 era.
+ * It is specifically optimized for high-throughput environments—like "wire stuff" network
+ * protocol analysis—where low latency and thread safety are non-negotiable.
+ *
+ * @section architecture_sec 🏗️ Architecture
+ *
+ * The library is built on a **handle-implementation (pImpl)** pattern. This ensures:
+ * - **Thread Safety**: All backends use internal mutexes or producer-consumer queues.
+ * - **Resource Efficiency**: An internal **Object Pool** recycles log entries to minimize
+ * heap pressure during high-frequency captures.
+ * - **Non-blocking I/O**: Asynchronous loggers offload formatting and writing to
+ * background worker threads.
+ *
+ * @section timestamp_sec 🕒 RFC 3339 Timestamps
+ *
+ * CppTrail features a high-performance ISO 8601/RFC 3339 formatter.
+ * - **Zulu Time**: `2026-03-01 15:17:34.672Z`
+ * - **Local Time**: `2026-03-01 15:17:34.672+01:00`
+ * @note This feature requires **C++20** `<chrono>` support. On older standards,
+ * timestamps are gracefully omitted.
+ *
+ * @section install_sec 📦 Integration (FetchContent)
+ *
+ * Add the following to your `CMakeLists.txt` to integrate CppTrail seamlessly:
+ *
+ * @code{.cmake}
+ * include(FetchContent)
+ * FetchContent_Declare(
+ * cpptrail
+ * GIT_REPOSITORY https://github.com/DanteDomenech/cpptrail.git
+ * GIT_TAG main
+ * )
+ * FetchContent_MakeAvailable(cpptrail)
+ *
+ * # Link to the interface library
+ * target_link_libraries(my_app PRIVATE CppTrail::cpptrail)
+ * @endcode
+ *
+ * @section quickstart_sec 🚀 Quick Start
+ *
+ * @subsection async_example Asynchronous Console Logging
+ * @code{.cpp}
+ * #include "cpptrail/ostream_logger.h"
+ *
+ * int main() {
+ *
+ *     // Instantiate logger
+ *     CppTrail::CoutAsyncLogger log;
+ *
+ *     Start logger
+ *     log.start();
+ *
+ *     // Log what you wish
+ *     log.log(CppTrail::Level::INFO, "Monitoring the wire...");
+ *
+ *     // Log an exception directly
+ *     try {
+ *         // ... network logic ...
+ *     } catch (const std::exception& e) {
+ *         log.log(e);
+ *     }
+ *
+ *     // Stop the logger (flushes everything before stopping)
+ *     log.stop(); // Ensures all logs are flushed
+ *
+ *     // All done!
+ *     return 0;
+ * }
+ * @endcode
+ *
+ * @section tutorial_sec  🎓 Learning More
+ * * To understand how to extend the library for your own needs:
+ * - **How to create custom loggers**: @ref custom_loggers_page *
+ *
+ * @section about 👤 About us
+ *
+ * @author Dante Doménech Martínez
+ * @copyright GPL-3 License
+ */
