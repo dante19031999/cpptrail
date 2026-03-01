@@ -29,6 +29,7 @@ jobs:
 
       - name: Build Doxygen docs
         run: |
+          mkdir -p docs
           mkdir -p cmake-build
           cd cmake-build && cmake .. && make doc
 
