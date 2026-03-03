@@ -23,7 +23,7 @@
  *
  * @code{.cpp}
  *     // Include our library.
- *     #include "cpptrail/logger_impl.h"
+ *     #include "cpptrail/logger.h"
  *     #include <iostream>
  *
  *     // Create a template class extending BasicLogger<char_t>
@@ -37,12 +37,13 @@
  *         // The factory constructor. Takes all data needed for the implementation.
  *         // @param oOstream: The std::basic_ostream<char_t> to write on on this example
  *         BasicOstreamLogger(
- *             std::basic_ostream<char_t> &oOstream,
+ *             std::basic_ostream<char_t> &oOstream
  *         ) : BasicLogger<char_t>(
  *             // Construct the parent (BasicLogger<char_t>) with a shated pointer of your implementation
  *             // @param oOstream: The std::basic_ostream<char_t> to write on on this example
  *             std::make_shared<Impl>(
  *                 std::reference_wrapper{oOstream}
+ *             )
  *         ) {
  *         }
  * @endcode
@@ -62,6 +63,7 @@
  *             // Just exploit the typdefs from the base layer
  *             using char_type = typename BasicLoggerImpl<char_t>::char_type;
  *             using string_type = typename BasicLoggerImpl<char_t>::string_type;
+ *             using message_type = typename BasicLoggerImpl<char_t>::message_type;
  *
  *         public:
  *             // Create a constructor that takes the data you need
@@ -80,16 +82,17 @@
  *         protected:
  *             // Override the method work. This function is in charge of the actual writting.
  *             // In our example it just dups the data in the ostream.
- *             void work(string_type sLevel, string_type sMessage) override{
+ *             void work(message_type oMessage) override{
  *                 // Get ostream
  *                 std::basic_ostream<char_t> &oOstream = m_oOstream.get();
  *                 // Write level + message
- *                 oOstream << sLevel;
  *                 oOstream.put(static_cast<char_t>(' '));
- *                 oOstream << sMessage;
+ *                 oOstream << oMessage.stealLevel();
+ *                 oOstream.put(static_cast<char_t>(' '));
+ *                 oOstream << oMessage.stealString();
  *                 oOstream.put(static_cast<char_t>('\n'));
  *                 // Flush
- *                 Ostream.flush();
+ *                 oOstream.flush();
  *             }
  *
  *             // Override serviceStatus to describe the service status
@@ -139,7 +142,7 @@
  *
  * @code{.cpp}
  *     // Include our library.
- *     #include "cpptrail/logger_impl.h"
+ *     #include "cpptrail/logger.h"
  *     #include <iostream>
  *
  *     // Create a template class extending BasicLogger<char_t>
@@ -163,28 +166,23 @@
  *
  *         // The factory constructor. Takes all data needed for the implementation.
  *         // @param oOstream: The std::basic_ostream<char_t> to write on on this example
- *         // @param bUseLocalTime If true, uses local time for timestamps; otherwise, uses UTC.
  *         // @param nMaxItemCount The maximum number of log entries allowed in the queue.
  *         // @param bThrowOnOverflow If true, log() throws LoggerOverflowError when full; otherwise, it drops the log.
  *         // @param nWorkerCount The number of background threads to spawn for processing.
- *         // @param nMaxBackupSize The maximum number of log entries allowed in the backup.
  *         BasicAsyncOstreamLogger(
- *             std::basic_ostream<char_t> &oOstream
+ *             std::basic_ostream<char_t> &oOstream,
  *             std::size_t nMaxItemCount,
  *             bool bThrowOnOverflow,
- *             std::size_t nWorkerCount,
- *             std::size_t nMaxBackupSize
+ *             std::size_t nWorkerCount
  *         ) : BasicLogger<char_t>(
  *             // Construct the parent (BasicLogger<char_t>) with a shated pointer of your implementation
  *             // @param oOstream: The std::basic_ostream<char_t> to write on on this example
  *             // @param ... Async logger settings
  *             std::make_shared<Impl>(
  *                 std::reference_wrapper{oOstream},
- *                 bUseLocalTime,
  *                 nMaxItemCount,
  *                 bThrowOnOverflow,
- *                 nWorkerCount,
- *                 nMaxBackupSize
+ *                 nWorkerCount
  *             )
  *         ) {
  *         }
@@ -198,46 +196,40 @@
  *             // Just exploit the typdefs from the base layer
  *             using char_type = typename BasicLoggerImpl<char_t>::char_type;
  *             using string_type = typename BasicLoggerImpl<char_t>::string_type;
+ *             using message_type = typename BasicLoggerImpl<char_t>::message_type;
  *
  *         public:
  *             // Create a constructor that takes the data you need
  *             // @param oOstream: The std::basic_ostream<char_t> to write on on this example
- *             // In our example there is no external service, therefore we reperesent the service status with an internal variable.
- *             // Sets as default status Status::STOPPED. It can be set on Status::STOPPED and call this->start();
+ *             // Sets as default status Status::TRASCENDENT because we are unnafected by life cycle.
+ *             // By default, non trascendent services are Status::STOPPED (vtable).
  *             Impl(
  *                 std::reference_wrapper<std::basic_ostream<char_t> > oOstream
- *             ) : m_oOstream(oOstream),
- *                 m_nStatus(Status::STOPPED) {
+ *             ) : m_oOstream(oOstream) {
  *             }
  *
  *             // Create a constructor that takes the data you need
  *             // In our example there is no external service, therefore we reperesent the service status with an internal variable.
- *             // Sets as default status Status::STOPPED. It can be set on Status::STOPPED and call this->start();
+ *             // Sets as default status Status::TRASCENDENT because we are unnafected by life cycle.
+ *             // By default, non trascendent services are Status::STOPPED (vtable).
  *             // This overload of the constructor allows for custom setup of the workers.
  *             // You may fine tune this configuration for your own situation.
  *             // @param oOstream: The std::basic_ostream<char_t> to write on on this example
  *             // @brief Internal constructor for the implementation.
  *             // @param oOstream Reference wrapper to the output sink.
- *             // @param bUseLocalTime Timestamp preference flag.
  *             // @param nMaxItemCount The maximum number of log entries allowed in the queue.
  *             // @param bThrowOnOverflow If true, log() throws LoggerOverflowError when full; otherwise, it drops the log.
- *             // @param nWorkerCount The number of background threads to spawn for processing.
- *             // @param nMaxBackupSize The maximum number of log entries allowed in the backup.
+ *             // @param nWorkerCount The number of background threads to spawn for processing. *             Impl(
  *             Impl(
  *                 std::reference_wrapper<std::basic_ostream<char_t> > oOstream,
- *                 const bool bUseLocalTime,
  *                 std::size_t nMaxItemCount,
  *                 bool bThrowOnOverflow,
- *                 std::size_t nWorkerCount,
- *                 std::size_t nMaxBackupSize
+ *                 std::size_t nWorkerCount
  *             ) : BasicAsyncLoggerImpl<char_t>(
  *                     nMaxItemCount,
  *                     bThrowOnOverflow,
- *                     nWorkerCount,
- *                     nMaxBackupSize
- *                 ), m_oOstream(oOstream),
- *                 m_bUseLocalTime(bUseLocalTime),
- *                 m_nStatus(Status::STOPPED) {
+ *                     nWorkerCount
+ *                 ), m_oOstream(oOstream){
  *             }
  *
  *             // Create a destructor
@@ -252,16 +244,19 @@
  *         protected:
  *             // Override the method work. This function is in charge of the actual writting.
  *             // In our example it just dups the data in the ostream.
- *             void work(string_type sLevel, string_type sMessage) override {
+ *             void work(message_type oMessage) override{
  *                 // Get ostream
  *                 std::basic_ostream<char_t> &oOstream = m_oOstream.get();
  *                 // Write level + message
- *                 oOstream << sLevel;
+ *                 // WARNING MAKE SURE THE STREAM IS VALID FOR MULTITHREADING !!!
+ *                 // OTHERWISE USE nWorkerCount = 1
  *                 oOstream.put(static_cast<char_t>(' '));
- *                 oOstream << sMessage;
+ *                 oOstream << oMessage.stealLevel();
+ *                 oOstream.put(static_cast<char_t>(' '));
+ *                 oOstream << oMessage.stealString();
  *                 oOstream.put(static_cast<char_t>('\n'));
  *                 // Flush
- *                 Ostream.flush();
+ *                 oOstream.flush();
  *             }
  *
  *             // Override serviceStatus to describe the service status
@@ -269,31 +264,27 @@
  *             // Running: Status::STOPPED: service stopped.
  *             // Running: Status::TRASCENDENT: service without life-cycle.
  *             // Running: Status::BROKEN: service disable (ex: lost connection).
- *             // In our case, we store the status in our internal variable.
+ *             // In our case we are not defined by status. We are trascendent.
  *             Status serviceStatus() override {
- *                 return this->m_nStatus;
+ *                 return Status::TRASCENDENT;
  *             }
  *
  *             // Override serviceStart to start the external service.
  *             // Starts the external service. Don't forget to change the logger state.
- *             // In our case, we store the status in our internal variable. Just update it.
+ *             // In our case we are not defined by status. We are trascendent.
  *             void serviceStart() override {
- *                 this->m_nStatus = Status::RUNNING;
  *             }
  *
  *             // Override serviceStop to start the external service.
  *             // Stops the external service. Don't forget to change the logger state.
- *             // In our case, we store the status in our internal variable. Just update it.
+ *             // In our case we are not defined by status. We are trascendent.
  *             void serviceStop() override {
- *                 this->m_nStatus = Status::STOPPED;
  *             }
  *
  *         private:
  *             // Store the data you need in the implementation
  *             // The target output stream reference.
- *             // The "external service" status.
  *             std::reference_wrapper<std::basic_ostream<char_t> > m_oOstream;
- *             Status m_nStatus;
  *         };
  *     };
  * @endcode

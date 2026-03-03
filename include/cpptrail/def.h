@@ -3,14 +3,19 @@
  * @brief Global definitions, enumerations, and string mapping utilities for CppTrail.
  * @author Dante Doménech Martínez
  * @copyright GPL-3 License
+ * @note StringView getters (getNameView, etc.) require C++17 or higher.
+ * Legacy support provided via utf42::basic_string_view for older standards.
  */
 
 #ifndef CPPTRAIL_DEF_H
 #define CPPTRAIL_DEF_H
 
+#if __cplusplus >= 201703L
+#include <string_view>
+#endif
+
 #include <array>
 #include <string>
-#include <string_view>
 
 #include "cpptrail/utf42.h"
 
@@ -58,15 +63,31 @@ namespace CppTrail {
         template<typename char_t>
         struct LevelName {
             /**
+             * @typedef string_view_type
+             * @brief Maps to std::string_view on C++17+, or CppTrail's fallback view on older standards.
+             */
+#if __cplusplus >= 201703L
+            using string_view_type = std::basic_string_view<char_t>;
+#else
+            using string_view_type = utf42::basic_string_view<char_t>;
+#endif
+
+            /**
              * @brief Retrieves the level name as a basic_string.
              * @param nLevel The log level.
              * @return A string containing the level name, or an empty string if invalid.
              */
             static std::basic_string<char_t> getName(Level nLevel) {
                 if (nLevel > Level::FATAL) return std::basic_string<char_t>{};
+#if __cplusplus >= 201703L
                 return std::basic_string<char_t>{NAMES[static_cast<std::size_t>(nLevel)]};
+#else
+                const auto sData = getNameView14(nLevel);
+                return {sData.data(), sData.length()};
+#endif
             }
 
+#if __cplusplus >= 201703L
             /**
              * @brief Retrieves a view of the level name.
              * @param nLevel The log level.
@@ -78,7 +99,7 @@ namespace CppTrail {
             }
 
             /// Static array of localized/encoded level names.
-            constexpr static std::array<std::basic_string_view<char_t>, 9> NAMES = {
+            constexpr static std::array<string_view_type, 9> NAMES = {
                 make_poly_enc(char_t, "SUCCESS"),
                 make_poly_enc(char_t, "TRACE"),
                 make_poly_enc(char_t, "DEBUG"),
@@ -89,6 +110,28 @@ namespace CppTrail {
                 make_poly_enc(char_t, "CRITICAL"),
                 make_poly_enc(char_t, "FATAL"),
             };
+#else
+            /**
+             * @brief Retrieves a view of the level name using a switch.
+             * @details This avoids the C++14 linker requirement for a static array definition.
+             * @param nLevel The log level.
+             * @return A string_view pointing to the static name literal.
+             */
+            static string_view_type getNameView14(Level nLevel) noexcept {
+                switch (nLevel) {
+                    case Level::SUCCESS: return make_poly_enc(char_t, "SUCCESS");
+                    case Level::TRACE: return make_poly_enc(char_t, "TRACE");
+                    case Level::DEBUG: return make_poly_enc(char_t, "DEBUG");
+                    case Level::INFO: return make_poly_enc(char_t, "INFO");
+                    case Level::MESSAGE: return make_poly_enc(char_t, "MESSAGE");
+                    case Level::WARNING: return make_poly_enc(char_t, "WARNING");
+                    case Level::ERROR: return make_poly_enc(char_t, "ERROR");
+                    case Level::CRITICAL: return make_poly_enc(char_t, "CRITICAL");
+                    case Level::FATAL: return make_poly_enc(char_t, "FATAL");
+                    default: return make_poly_enc(char_t, "");
+                }
+            }
+#endif
         };
     }
 
@@ -147,8 +190,10 @@ namespace CppTrail {
 
     /** @} */
 
+#if __cplusplus >= 201703L
     /** @name StringView Getters (Non-allocating)
      * High-performance functions that return views to static memory.
+     * @note These functions are only available when compiling with C++17 or later.
      * @{ */
 
     /**
@@ -201,6 +246,7 @@ namespace CppTrail {
     }
 
     /** @} */
+#endif
 }
 
 #endif
